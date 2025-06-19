@@ -1,0 +1,116 @@
+$startTime = Get-Date
+
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+
+function Write-ColoredMessage {
+    param (
+        [string]$message,
+        [ConsoleColor]$color = "White",
+        [switch]$NoNewLine
+    )
+    $originalColor = $Host.UI.RawUI.ForegroundColor
+    $Host.UI.RawUI.ForegroundColor = $color
+    if ($NoNewLine) {
+        Write-Host -NoNewline $message
+    } else {
+        Write-Host $message
+    }
+    $Host.UI.RawUI.ForegroundColor = $originalColor
+}
+
+function Show-AsciiBanner {
+    $banner = @"
+  __  __  _____ _        _____             _____       _           
+ |  \/  |/ ____| |      |  __ \           |  __ \     | |          
+ | \  / | |    | |      | |__) |___  ___  | |__) |   _| | ___  ___ 
+ | |\/| | |    | |      |  _  // _ \/ __| |  _  / | | | |/ _ \/ __|
+ | |  | | |____| |____  | | \ \  __/ (__  | | \ \ |_| | |  __/\__ \
+ |_|  |_|\_____|______| |_|  \_\___|\___| |_|  \_\__,_|_|\___||___/
+                                                                   
+"@
+
+    $banner -split "`n" | ForEach-Object {
+        Write-ColoredMessage $_ -color Red
+    }
+
+    Write-Host
+    Write-ColoredMessage "Made by @Cyberthreats - " -color Blue -NoNewLine
+    Write-ColoredMessage "MCL T1-T3 Powershell Command" -color Red
+    Write-Host
+    Write-Host
+}
+
+function Show-LoadingBar {
+    $totalLength = 20
+    for ($percent = 0; $percent -le 100; $percent += 10) {
+        $hashCount = [math]::Round(($percent / 100) * $totalLength)
+        $bar = ('#' * $hashCount).PadRight($totalLength, ' ')
+        $percentDisplay = "{0,3}%" -f $percent
+        $line = "$percentDisplay [$bar]"
+        Write-Host -NoNewline "`r"
+        Write-ColoredMessage $line -color Blue -NoNewLine
+        Start-Sleep -Milliseconds 300
+    }
+    Write-Host
+    $endTime = Get-Date
+    Write-Host ("Script ended at   : {0}" -f $endTime.ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
+}
+
+function Show-PrefetchFilesGUI {
+    $prefetchDir = "$env:SystemRoot\Prefetch"
+
+    if (-not (Test-Path $prefetchDir)) {
+        Write-ColoredMessage " Prefetch directory not found at $prefetchDir" -color Red
+        return
+    }
+
+    $files = Get-ChildItem -Path $prefetchDir -Filter *.pf -ErrorAction SilentlyContinue
+    if (-not $files) {
+        Write-ColoredMessage " No prefetch files found in $prefetchDir." -color Red
+        return
+    }
+
+    $form = New-Object System.Windows.Forms.Form
+    $form.Text = "Prefetch Files Viewer"
+    $form.WindowState = 'Maximized'
+    $form.MinimumSize = New-Object System.Drawing.Size(800, 600)
+    $form.StartPosition = "CenterScreen"
+    $form.BackColor = [System.Drawing.Color]::White
+    $form.Topmost = $true
+    $form.FormBorderStyle = 'Sizable'
+
+    $dgv = New-Object System.Windows.Forms.DataGridView
+    $dgv.Dock = 'Fill'
+    $dgv.ReadOnly = $true
+    $dgv.BackgroundColor = [System.Drawing.Color]::White
+    $dgv.DefaultCellStyle.ForeColor = [System.Drawing.Color]::Black
+    $dgv.ColumnHeadersDefaultCellStyle.ForeColor = [System.Drawing.Color]::Black
+    $dgv.ColumnHeadersDefaultCellStyle.BackColor = [System.Drawing.Color]::LightGray
+    $dgv.EnableHeadersVisualStyles = $false
+    $dgv.AutoSizeColumnsMode = 'AllCells'
+
+    $form.Controls.Add($dgv)
+
+    $table = New-Object System.Data.DataTable
+    $table.Columns.Add("FileName", [string]) | Out-Null
+    $table.Columns.Add("Size (KB)", [double]) | Out-Null
+    $table.Columns.Add("LastWriteTime", [datetime]) | Out-Null
+
+    foreach ($file in $files) {
+        $row = $table.NewRow()
+        $row["FileName"] = $file.Name
+        $row["Size (KB)"] = [math]::Round($file.Length / 1KB, 2)
+        $row["LastWriteTime"] = $file.LastWriteTime
+        $table.Rows.Add($row)
+    }
+
+    $dgv.DataSource = $table
+    $form.Add_Shown({ $form.Activate() })
+    [void] $form.ShowDialog()
+}
+
+Clear-Host
+Show-AsciiBanner
+Show-LoadingBar
+Show-PrefetchFilesGUI
