@@ -54,7 +54,7 @@ function Show-LoadingBar {
     }
     Write-Host
     $endTime = Get-Date
-    Write-Host ("Script ended at   : {0}" -f $endTime.ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Gray
+    Write-Host ("Script ended at   : {0}" -f $endTime.ToString("yyyy-MM-dd HH:mm:ss")) -ForegroundColor Red
 }
 
 function Show-PrefetchFilesGUI {
@@ -72,7 +72,7 @@ function Show-PrefetchFilesGUI {
     }
 
     $form = New-Object System.Windows.Forms.Form
-    $form.Text = "Prefetch Files Viewer"
+    $form.Text = "Sigma Prefetch Viewer"
     $form.WindowState = 'Maximized'
     $form.MinimumSize = New-Object System.Drawing.Size(800, 600)
     $form.StartPosition = "CenterScreen"
